@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/main.css">
+    <title>Filmdatabase</title>
+</head>
+
+<body>
+    <main>
+        <h1>Føyen sitt admin system</h1>
+
+        <h3>Opprett ny bruker</h3>
+        <div>
+            <label>Fornavn:</label><br>
+            <input id="fname" type="text">
+        </div>
+        <div>
+            <label>Etternavn:</label><br>
+            <input id="lname" type="text">
+        </div>
+        <div>
+            <label>Adresse:</label><br>
+            <input id="address" type="text">
+        </div>
+        <div>
+            <label>Postnr:</label><br>
+            <input id="zip" type="number" maxlength="4">
+        </div>
+        <div>
+            <label>Poststed:</label><br>
+            <input id="city" type="text">
+        </div>
+        <div>
+            <label>Epost:</label><br>
+            <input id="email" type="email">
+        </div>
+        <div>
+            <label>Passord:</label><br>
+            <input id="password" type="password">
+        </div>
+
+        <div class="signUpBox">
+            <button id="btnCreate" onclick="signUp()">Opprett bruker</button>
+        </div>
+    
+    </main>
+
+    <!-- Må hente inn eksterne rammeverk/bibliotek for å kunne laste inn js frå anna fil-->
+    <script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-firestore-compat.js"></script>
+
+    <script src="js/register.js"></script>
+</body>
+
+</html>

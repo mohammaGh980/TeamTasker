@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <title>TeamTasker</title>
+</head>
+
+<body>
+
+    <main>
+
+        <nav class="topnav">
+            <div class="nav-left">
+                <a href="#" class="logo">TeamTasker</a>
+            </div>
+            <div class="nav-middle">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#tasks" class="nav-link">Tasks</a>
+            </div>
+            <div class="nav-right">
+                <div class="user-icon" onclick="toggleProfileMenu()">
+                    <img src="https://via.placeholder.com/40" alt="User Icon">
+                </div>
+            </div>
+        </nav>
+    
+        <!-- Profile dropdown -->
+        <div id="profile-menu" class="profile-menu hidden">
+            <a href="#profile">View Profile</a>
+            <a href="#settings">Settings</a>
+            <a href="#logout"onclick="logout()">Logout</a>
+        </div>
+    
+        <script>
+            function toggleProfileMenu() {
+                const menu = document.getElementById('profile-menu');
+                menu.classList.toggle('hidden');
+            }
+        </script>
+        </script>
+
+        <button id="add-task-btn">+</button>
+        <!-- Skjema for å legge til ny oppgave (skjult som standard) -->
+        <div id="task-form-container" class="task-container hidden">
+            <div id="task-form">
+                <h2>New Task</h2>
+                <input type="text" id="task-title" placeholder="Task title">
+                <button id="save-task-btn">Save</button>
+                <button id="cancel-task-btn">Cancel</button>
+            </div>
+        </div>
+        <button id="share-btn">Del prosjekt</button>
+        <input id="share-link" type="text" readonly style="display: none; width: 100%;">       
+        <!-- Oppgavetavle med kolonner -->
+        <section class="task-board">
+            <div class="task-column" id="not-started">
+                <h2>Not Started</h2>
+                <div class="task-list" id="not-started-list"></div>
+            </div>
+            <div class="task-column" id="in-progress">
+                <h2>In Progress</h2>
+                <div class="task-list" id="in-progress-list"></div>
+            </div>
+            <div class="task-column" id="blocked">
+                <h2>Blocked</h2>
+                <div class="task-list" id="blocked-list"></div>
+            </div>
+            <div class="task-column" id="done">
+                <h2>Done</h2>
+                <div class="task-list" id="done-list"></div>
+            </div>
+        </section>
+
+  
+   
+<!-- Firebase og hovedskript -->
+<script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-firestore-compat.js"></script>
+        <script src="app.js"></script>
+        <script src="firebase-config.js"></script>
+    </main>
+</body>
+
+</html>

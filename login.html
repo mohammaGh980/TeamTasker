@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" 
+          content="width=device-width, 
+                         initial-scale=1.0">
+    <title>GeeksforGeeks</title>
+    <link rel="stylesheet" href="login.css">
+</head>
+
+<body>
+    <header>
+        <h1 class="heading">Wellcom to Task Management Board </h1>
+        <h3 class="title">please login or Singup</h3>
+    </header>
+
+    <!-- container div -->
+    <div class="container">
+
+        <!-- upper button section to select
+             the login or signup form -->
+        <div class="slider"></div>
+        <div class="btn">
+            <button class="login">Login</button>
+            <button class="signup">Signup</button>
+        </div>
+
+        <!-- Form section that contains the
+             login and the signup form -->
+        <div class="form-section">
+
+            <!-- login form -->
+            <div class="login-box">
+                <input id="loginEmail" type="email" 
+                       class="email ele" 
+                       placeholder="youremail@email.com">
+                <input id="loginPassword" type="password"
+                       class="password ele"  
+                       placeholder="password">
+                <button class="clkbtn" onclick="login2()">Login</button>
+            </div>
+
+            <!-- signup form -->
+            <div class="signup-box">
+                <input id="SignupName" type="text" 
+                       class="name ele" 
+                       placeholder="Enter your name">
+                <input id="SingupEmail" type="email" 
+                       class="email ele" 
+                       placeholder="youremail@email.com">
+                <input id="SingupPassword" type="password" 
+                       class="password ele" 
+                       placeholder="password">
+                <input id="conformPassword" type="password" 
+                       class="password1 ele" 
+                       placeholder="Confirm password">
+                <button class="clkbtn" onclick="signUp()">Signup</button>
+            </div>
+        </div>
+
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-firestore-compat.js"></script>
+    <script src="register.js"></script>
+</body>
+</html>
