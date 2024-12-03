@@ -11,19 +11,45 @@ const firebaseApp = firebase.initializeApp({
 
 const db = firebaseApp.firestore();
 const auth = firebase.auth();
-let docid = "";
-let projectId = null; // Prosjekt-ID for deling
+let projectId = null; // Prosjekt-ID
+let currentUserId = null; // ID for innlogget bruker
 
 // Sjekk om brukeren er logget inn
 auth.onAuthStateChanged((user) => {
     if (user) {
         console.log("Brukeren er logget inn:", user.email);
-        loadTasks();
+        currentUserId = user.uid; // Lagre bruker-ID
+        sessionStorage.setItem("uid", currentUserId); // Lagre i sessionStorage
+        loadProjectId(); // Sjekk eller generer prosjekt-ID
     } else {
-        // Hvis brukeren ikke er logget inn, omdiriger til innloggingssiden
-        window.location.href = "login.html";
+        console.log("Ingen bruker er logget inn.");
+        window.location.href = "login.html"; // Gå til innloggingsside
     }
 });
+
+// Funksjon for å laste eller opprette prosjekt-ID
+function loadProjectId() {
+    const savedProjectId = sessionStorage.getItem("projectId");
+    if (savedProjectId) {
+        projectId = savedProjectId; // Bruk lagret prosjekt-ID
+        loadTasks();
+    } else {
+        db.collection("projects").doc(currentUserId).get().then((doc) => {
+            if (doc.exists) {
+                projectId = doc.data().projectId;
+                sessionStorage.setItem("projectId", projectId); // Lagre i sessionStorage
+                loadTasks();
+            } else {
+                projectId = generateId(); // Opprett ny prosjekt-ID
+                db.collection("projects").doc(currentUserId).set({ projectId })
+                    .then(() => {
+                        sessionStorage.setItem("projectId", projectId); // Lagre i sessionStorage
+                        loadTasks();
+                    }).catch((error) => console.error("Feil ved lagring av prosjekt-ID:", error));
+            }
+        }).catch((error) => console.error("Feil ved henting av prosjekt-ID:", error));
+    }
+}
 
 // Funksjon for å opprette et oppgaveelement
 function createTaskElement(taskId, taskData) {
@@ -40,17 +66,19 @@ function createTaskElement(taskId, taskData) {
     editableText.disabled = true;
     taskElement.appendChild(editableText);
 
-    // Rediger-knapp
-    const editButton = document.createElement('button');
-    editButton.textContent = 'Rediger';
-    editButton.classList.add('edit-btn');
-    editButton.onclick = () => {
-        editableText.disabled = false;
-        editableText.focus();
-        editButton.classList.add('hidden');
-        saveButton.classList.remove('hidden');
-    };
-    taskElement.appendChild(editButton);
+     // Rediger-knapp med ikon
+     const editButton = document.createElement('button');
+     editButton.classList.add('edit-btn');
+     const editIcon = document.createElement('i');
+     editIcon.classList.add('fas', 'fa-edit'); // FontAwesome edit-ikon
+     editButton.appendChild(editIcon);
+     editButton.onclick = () => {
+         editableText.disabled = false;
+         editableText.focus();
+         editButton.classList.add('hidden');
+         saveButton.classList.remove('hidden');
+     };
+     taskElement.appendChild(editButton);
 
     // Lagre-knapp
     const saveButton = document.createElement('button');
@@ -59,7 +87,9 @@ function createTaskElement(taskId, taskData) {
     saveButton.onclick = () => {
         const updatedText = editableText.value.trim();
         if (updatedText) {
-            db.collection('tasks').doc(taskId).update({ title: updatedText });
+            db.collection('tasks').doc(taskId).update({ title: updatedText })
+                .then(() => console.log("Oppgave oppdatert."))
+                .catch((error) => console.error("Feil ved oppdatering av oppgave:", error));
         }
         editableText.disabled = true;
         editButton.classList.remove('hidden');
@@ -67,16 +97,18 @@ function createTaskElement(taskId, taskData) {
     };
     taskElement.appendChild(saveButton);
 
-    // Slett-knapp
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Slett';
-    deleteButton.classList.add('delete-btn');
-    deleteButton.onclick = () => {
-        if (confirm('Er du sikker på at du vil slette denne oppgaven?')) {
-            db.collection('tasks').doc(taskId).delete();
-        }
-    };
-    taskElement.appendChild(deleteButton);
+     // Slett-knapp med ikon
+     const deleteButton = document.createElement('button');
+     deleteButton.classList.add('delete-btn');
+     const deleteIcon = document.createElement('i');
+     deleteIcon.classList.add('fas', 'fa-trash'); // FontAwesome trash-ikon
+     deleteButton.appendChild(deleteIcon);
+     deleteButton.onclick = () => {
+         if (confirm('Er du sikker på at du vil slette denne oppgaven?')) {
+             db.collection('tasks').doc(taskId).delete();
+         }
+     };
+     taskElement.appendChild(deleteButton);
 
     // Dra-og-slipp
     taskElement.addEventListener('dragstart', (e) => {
@@ -88,39 +120,39 @@ function createTaskElement(taskId, taskData) {
 
 // Last inn oppgaver fra Firebase
 function loadTasks() {
-    const userId = sessionStorage.getItem("uid"); // Henter ut userid som er lagra i sessionStorage
-    db.collection("tasks").onSnapshot((snapshot) => {
-        document.getElementById("not-started-list").innerHTML = "";
-        document.getElementById("in-progress-list").innerHTML = "";
-        document.getElementById("blocked-list").innerHTML = "";
-        document.getElementById("done-list").innerHTML = "";
+    db.collection("tasks").where("userid", "==", currentUserId).where("projectId", "==", projectId)
+        .onSnapshot((snapshot) => {
+            // Tøm kolonnene
+            ["not-started", "in-progress", "blocked", "done"].forEach(status => {
+                document.getElementById(`${status}-list`).innerHTML = "";
+            });
 
-        snapshot.forEach((doc) => {
-            if (doc.data().userid == userId && doc.data().projectId === projectId) {
+            snapshot.forEach((doc) => {
                 const taskData = doc.data();
                 const taskElement = createTaskElement(doc.id, taskData);
                 document.getElementById(`${taskData.status}-list`).appendChild(taskElement);
-            }
+            });
         });
-    });
 }
 
 // Oppdater oppgavestatus i Firebase
 function updateTaskStatus(taskId, newStatus) {
-    db.collection("tasks").doc(taskId).update({
-        status: newStatus
-    });
+    db.collection("tasks").doc(taskId).update({ status: newStatus })
+        .then(() => console.log(`Status oppdatert til ${newStatus}.`))
+        .catch((error) => console.error("Feil ved oppdatering av status:", error));
 }
 
 // Legg til ny oppgave i Firebase
 function addTask(title) {
-    const userId = sessionStorage.getItem("uid");
-    projectId = projectId || generateId(); // Opprett prosjekt-ID hvis ikke finnes
     db.collection("tasks").add({
         title: title,
         status: "not-started",
-        userid: userId,
+        userid: currentUserId,
         projectId: projectId
+    }).then(() => {
+        console.log("Oppgave lagt til.");
+    }).catch((error) => {
+        console.error("Feil ved lagring av oppgave:", error);
     });
 }
 
@@ -163,22 +195,12 @@ document.getElementById("save-task-btn").addEventListener("click", () => {
     });
 });
 
-// Funksjonalitet for del-knapp
-document.getElementById("share-btn").addEventListener("click", () => {
-    projectId = projectId || generateId(); // Opprett prosjekt-ID hvis ikke finnes
-    const shareLink = `${window.location.origin}?projectId=${projectId}`;
-    navigator.clipboard.writeText(shareLink).then(() => {
-        alert("Prosjektlenke kopiert til utklippstavlen!");
-    });
-});
-
-// Last inn oppgaver ved start
-loadTasks();
-
 // Logg ut
 function logout() {
     auth.signOut().then(() => {
-        sessionStorage.removeItem("uid");
+        sessionStorage.clear();
         window.location.href = "login.html";
+    }).catch((error) => {
+        console.error("Feil ved utlogging:", error);
     });
 }
