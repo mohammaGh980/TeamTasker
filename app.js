@@ -11,13 +11,21 @@ const firebaseApp = firebase.initializeApp({
 
 const db = firebaseApp.firestore();
 const auth = firebase.auth();
-let docid = "";
-let projectId = null; // Prosjekt-ID for deling
 
 // Sjekk om brukeren er logget inn
 auth.onAuthStateChanged((user) => {
     if (user) {
         console.log("Brukeren er logget inn:", user.email);
+
+        // Vis velkomstmelding med brukerens navn (eller e-post hvis displayName ikke er satt)
+        const welcomeMessage = document.getElementById("welcome-message");
+        const userName = user.displayName || user.email; // Brukerens navn hvis tilgjengelig, ellers e-post
+        welcomeMessage.textContent = `Velkommen, ${userName}`;
+
+        // Lagre brukerens ID i sessionStorage for enkel tilgang
+        sessionStorage.setItem("uid", user.uid);
+
+        // Last oppgaver etter at brukeren er logget inn
         loadTasks();
     } else {
         // Hvis brukeren ikke er logget inn, omdiriger til innloggingssiden
@@ -40,10 +48,12 @@ function createTaskElement(taskId, taskData) {
     editableText.disabled = true;
     taskElement.appendChild(editableText);
 
-    // Rediger-knapp
+    // Rediger-knapp med ikon
     const editButton = document.createElement('button');
-    editButton.textContent = 'Rediger';
     editButton.classList.add('edit-btn');
+    const editIcon = document.createElement('i');
+    editIcon.classList.add('fas', 'fa-edit'); // Bruk Font Awesome for ikon
+    editButton.appendChild(editIcon);
     editButton.onclick = () => {
         editableText.disabled = false;
         editableText.focus();
@@ -52,10 +62,12 @@ function createTaskElement(taskId, taskData) {
     };
     taskElement.appendChild(editButton);
 
-    // Lagre-knapp
+    // Lagre-knapp med ikon
     const saveButton = document.createElement('button');
-    saveButton.textContent = 'Lagre';
     saveButton.classList.add('save-btn', 'hidden');
+    const saveIcon = document.createElement('i');
+    saveIcon.classList.add('fas', 'fa-save'); // Bruk Font Awesome for ikon
+    saveButton.appendChild(saveIcon);
     saveButton.onclick = () => {
         const updatedText = editableText.value.trim();
         if (updatedText) {
@@ -67,10 +79,12 @@ function createTaskElement(taskId, taskData) {
     };
     taskElement.appendChild(saveButton);
 
-    // Slett-knapp
+    // Slett-knapp med ikon
     const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Slett';
     deleteButton.classList.add('delete-btn');
+    const deleteIcon = document.createElement('i');
+    deleteIcon.classList.add('fas', 'fa-trash-alt'); // Bruk Font Awesome for ikon
+    deleteButton.appendChild(deleteIcon);
     deleteButton.onclick = () => {
         if (confirm('Er du sikker på at du vil slette denne oppgaven?')) {
             db.collection('tasks').doc(taskId).delete();
@@ -96,7 +110,7 @@ function loadTasks() {
         document.getElementById("done-list").innerHTML = "";
 
         snapshot.forEach((doc) => {
-            if (doc.data().userid == userId && doc.data().projectId === projectId) {
+            if (doc.data().userid == userId) {
                 const taskData = doc.data();
                 const taskElement = createTaskElement(doc.id, taskData);
                 document.getElementById(`${taskData.status}-list`).appendChild(taskElement);
@@ -115,16 +129,14 @@ function updateTaskStatus(taskId, newStatus) {
 // Legg til ny oppgave i Firebase
 function addTask(title) {
     const userId = sessionStorage.getItem("uid");
-    projectId = projectId || generateId(); // Opprett prosjekt-ID hvis ikke finnes
     db.collection("tasks").add({
         title: title,
         status: "not-started",
-        userid: userId,
-        projectId: projectId
+        userid: userId
     });
 }
 
-// Generer en unik ID for prosjektet
+// Generer en unik ID for prosjektet (hvis nødvendig)
 function generateId() {
     return Math.random().toString(36).substring(2, 9);
 }
@@ -163,18 +175,6 @@ document.getElementById("save-task-btn").addEventListener("click", () => {
     });
 });
 
-// Funksjonalitet for del-knapp
-document.getElementById("share-btn").addEventListener("click", () => {
-    projectId = projectId || generateId(); // Opprett prosjekt-ID hvis ikke finnes
-    const shareLink = `${window.location.origin}?projectId=${projectId}`;
-    navigator.clipboard.writeText(shareLink).then(() => {
-        alert("Prosjektlenke kopiert til utklippstavlen!");
-    });
-});
-
-// Last inn oppgaver ved start
-loadTasks();
-
 // Logg ut
 function logout() {
     auth.signOut().then(() => {
@@ -182,3 +182,50 @@ function logout() {
         window.location.href = "login.html";
     });
 }
+// Hent referanser til DOM-elementer
+const profileModal = document.getElementById("profile-modal");
+const profileName = document.getElementById("profile-name");
+const profilePic = document.getElementById("profile-pic");
+const profilePicInput = document.getElementById("profile-pic-input");
+
+// Funksjon for å vise profil
+function viewProfile() {
+    const user = auth.currentUser; // Henter innlogget bruker fra Firebase Auth
+    if (user) {
+        profileName.textContent = user.displayName || "Anonymous User"; // Vis brukerens navn eller 'Anonymous User'
+        profileModal.classList.remove("hidden");
+    } else {
+        alert("Ingen bruker er logget inn!");
+    }
+}
+
+// Funksjon for å lukke modal
+function closeProfileModal() {
+    profileModal.classList.add("hidden");
+}
+
+// Funksjon for å oppdatere profilbilde
+profilePicInput.addEventListener("change", (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            profilePic.src = e.target.result; // Oppdater forhåndsvisning av bilde
+            // Last opp bildet til Firebase Storage
+            const storageRef = firebase.storage().ref();
+            const userProfilePicRef = storageRef.child(`profilePics/${auth.currentUser.uid}`);
+            userProfilePicRef.put(file).then(() => {
+                userProfilePicRef.getDownloadURL().then((url) => {
+                    auth.currentUser.updateProfile({
+                        photoURL: url
+                    }).then(() => {
+                        alert("Profilbilde oppdatert!");
+                    }).catch((error) => {
+                        console.error("Feil ved oppdatering av profilbilde:", error);
+                    });
+                });
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+});

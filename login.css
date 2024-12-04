@@ -16,7 +16,7 @@ body {
     align-items: center;
     flex-direction: column;
     gap: 30px;
-    background-color: rgb(231, 231, 231);
+    background-color: #450262;
 }
 
 header {
