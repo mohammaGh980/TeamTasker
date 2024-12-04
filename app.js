@@ -28,34 +28,10 @@ auth.onAuthStateChanged((user) => {
         // Last oppgaver etter at brukeren er logget inn
         loadTasks();
     } else {
-        console.log("Ingen bruker er logget inn.");
-        window.location.href = "login.html"; // Gå til innloggingsside
+        // Hvis brukeren ikke er logget inn, omdiriger til innloggingssiden
+        window.location.href = "login.html";
     }
 });
-
-// Funksjon for å laste eller opprette prosjekt-ID
-function loadProjectId() {
-    const savedProjectId = sessionStorage.getItem("projectId");
-    if (savedProjectId) {
-        projectId = savedProjectId; // Bruk lagret prosjekt-ID
-        loadTasks();
-    } else {
-        db.collection("projects").doc(currentUserId).get().then((doc) => {
-            if (doc.exists) {
-                projectId = doc.data().projectId;
-                sessionStorage.setItem("projectId", projectId); // Lagre i sessionStorage
-                loadTasks();
-            } else {
-                projectId = generateId(); // Opprett ny prosjekt-ID
-                db.collection("projects").doc(currentUserId).set({ projectId })
-                    .then(() => {
-                        sessionStorage.setItem("projectId", projectId); // Lagre i sessionStorage
-                        loadTasks();
-                    }).catch((error) => console.error("Feil ved lagring av prosjekt-ID:", error));
-            }
-        }).catch((error) => console.error("Feil ved henting av prosjekt-ID:", error));
-    }
-}
 
 // Funksjon for å opprette et oppgaveelement
 function createTaskElement(taskId, taskData) {
@@ -95,9 +71,7 @@ function createTaskElement(taskId, taskData) {
     saveButton.onclick = () => {
         const updatedText = editableText.value.trim();
         if (updatedText) {
-            db.collection('tasks').doc(taskId).update({ title: updatedText })
-                .then(() => console.log("Oppgave oppdatert."))
-                .catch((error) => console.error("Feil ved oppdatering av oppgave:", error));
+            db.collection('tasks').doc(taskId).update({ title: updatedText });
         }
         editableText.disabled = true;
         editButton.classList.remove('hidden');
@@ -128,27 +102,28 @@ function createTaskElement(taskId, taskData) {
 
 // Last inn oppgaver fra Firebase
 function loadTasks() {
-    db.collection("tasks").where("userid", "==", currentUserId).where("projectId", "==", projectId)
-        .onSnapshot((snapshot) => {
-            // Tøm kolonnene
-            ["not-started", "in-progress", "blocked", "done"].forEach(status => {
-                document.getElementById(`${status}-list`).innerHTML = "";
-            });
+    const userId = sessionStorage.getItem("uid"); // Henter ut userid som er lagra i sessionStorage
+    db.collection("tasks").onSnapshot((snapshot) => {
+        document.getElementById("not-started-list").innerHTML = "";
+        document.getElementById("in-progress-list").innerHTML = "";
+        document.getElementById("blocked-list").innerHTML = "";
+        document.getElementById("done-list").innerHTML = "";
 
         snapshot.forEach((doc) => {
             if (doc.data().userid == userId) {
                 const taskData = doc.data();
                 const taskElement = createTaskElement(doc.id, taskData);
                 document.getElementById(`${taskData.status}-list`).appendChild(taskElement);
-            });
+            }
         });
+    });
 }
 
 // Oppdater oppgavestatus i Firebase
 function updateTaskStatus(taskId, newStatus) {
-    db.collection("tasks").doc(taskId).update({ status: newStatus })
-        .then(() => console.log(`Status oppdatert til ${newStatus}.`))
-        .catch((error) => console.error("Feil ved oppdatering av status:", error));
+    db.collection("tasks").doc(taskId).update({
+        status: newStatus
+    });
 }
 
 // Legg til ny oppgave i Firebase
@@ -203,10 +178,8 @@ document.getElementById("save-task-btn").addEventListener("click", () => {
 // Logg ut
 function logout() {
     auth.signOut().then(() => {
-        sessionStorage.clear();
+        sessionStorage.removeItem("uid");
         window.location.href = "login.html";
-    }).catch((error) => {
-        console.error("Feil ved utlogging:", error);
     });
 }
 // Hent referanser til DOM-elementer
