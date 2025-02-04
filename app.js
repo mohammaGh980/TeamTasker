@@ -229,3 +229,104 @@ profilePicInput.addEventListener("change", (event) => {
         reader.readAsDataURL(file);
     }
 });
+
+
+
+// Vis profilmodal
+function viewProfile() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const profileModal = document.getElementById('profile-modal');
+    const overlay = document.getElementById('profile-overlay');
+    const profileName = document.getElementById('profile-name');
+    const profileEmail = document.getElementById('profile-email');
+    const profilePic = document.getElementById('profile-pic');
+    const profileInitials = document.getElementById('profile-initials');
+
+    // Sett brukerinformasjon
+    profileName.textContent = user.displayName || user.email.split('@')[0];
+    profileEmail.textContent = user.email;
+
+    // Håndter profilbilde eller initialer
+    if (user.photoURL) {
+        profilePic.src = user.photoURL;
+        profilePic.style.display = 'block';
+        profileInitials.style.display = 'none';
+    } else {
+        const initials = getInitials(user.displayName || user.email);
+        profileInitials.textContent = initials;
+        profilePic.style.display = 'none';
+        profileInitials.style.display = 'flex';
+    }
+
+    profileModal.classList.add('visible');
+    overlay.classList.add('visible');
+}
+
+// Lukk profilmodal
+function closeProfileModal() {
+    document.getElementById('profile-modal').classList.remove('visible');
+    document.getElementById('profile-overlay').classList.remove('visible');
+}
+
+// Hjelpefunksjon for initialer
+function getInitials(name) {
+    return name.split(' ').map(part => part[0]).join('').toUpperCase().substring(0, 2);
+}
+
+// Oppdater brukerikon i navigasjonen
+function updateUserIcon(user) {
+    const userIcon = document.querySelector('.user-icon');
+    if (user.photoURL) {
+        userIcon.innerHTML = `<img src="${user.photoURL}" alt="User Icon">`;
+    } else {
+        const initials = getInitials(user.displayName || user.email);
+        userIcon.classList.add('initials');
+        userIcon.textContent = initials;
+    }
+}
+
+// Oppdater profilbilde
+document.getElementById('profile-pic-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+        const storageRef = firebase.storage().ref();
+        const user = auth.currentUser;
+        const fileRef = storageRef.child(`profilePics/${user.uid}`);
+        
+        // Last opp bildet
+        await fileRef.put(file);
+        const downloadURL = await fileRef.getDownloadURL();
+
+        // Oppdater brukerprofil
+        await user.updateProfile({
+            photoURL: downloadURL
+        });
+
+        // Oppdater UI
+        updateUserIcon(user);
+        viewProfile(); // Oppdater modalen
+    } catch (error) {
+        console.error('Feil ved opplasting av bilde:', error);
+        alert('Kunne ikke laste opp bildet');
+    }
+});
+
+// Oppdater authStateChanged for å inkludere brukerikon
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        // ... eksisterende kode ...
+        updateUserIcon(user); // Legg til denne linjen
+    } else {
+        // ... eksisterende kode ...
+    }
+});
+
+// Knytt viewProfile-funksjonen til menyen
+document.querySelector('#profile-menu a[href="#profile"]').addEventListener('click', (e) => {
+    e.preventDefault();
+    viewProfile();
+});

@@ -19,7 +19,7 @@
                 <a href="#" class="logo">TeamTasker</a>
             </div>
             <div class="nav-middle">
-                <a href="#home" class="nav-link">Home</a>
+                <a href="index.html" class="nav-link">Home</a>
                 <a href="#tasks" class="nav-link">Tasks</a>
             </div>
             <div class="nav-right">
@@ -28,12 +28,20 @@
                 </div>
             </div>
         </nav>
-    
-        <!-- Profile dropdown -->
-        <div id="profile-menu" class="profile-menu hidden">
-            <a href="#profile">View Profile</a>
-            <a href="#settings">Settings</a>
-            <a href="#logout"onclick="logout()">Logout</a>
+        <div class="overlay" id="profile-overlay"></div>
+        <div class="profile-modal" id="profile-modal">
+            <div class="profile-header">
+                <div class="profile-picture" onclick="document.getElementById('profile-pic-input').click()">
+                    <div id="profile-initials"></div>
+                    <img id="profile-pic" src="" alt="Profile Picture">
+                </div>
+                <input type="file" id="profile-pic-input" accept="image/*" style="display: none;">
+                <div class="profile-details">
+                    <h2 id="profile-name"></h2>
+                    <p id="profile-email"></p>
+                </div>
+            </div>
+            <button onclick="closeProfileModal()" style="position: absolute; top: 1rem; right: 1rem;">X</button>
         </div>
         
         <h1 id="welcome-message"></h1>
@@ -85,6 +93,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.3/firebase-firestore-compat.js"></script>
         <script src="app.js"></script>
+
     </main>
 </body>
 
